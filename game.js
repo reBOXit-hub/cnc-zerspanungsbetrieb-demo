@@ -67,11 +67,13 @@ function runProgram() {
   const program = $('#program-input').value.trim();
   if (!program || !/(G00|G01|G02|G03|G90|G91|F\s*\d+)/i.test(program)) { showToast('Das Programm braucht gültige CNC-Befehle, z. B. G00 und G01.'); return; }
   if (state.stock < state.order.kg) { showToast(`Nicht genug Material: ${state.order.kg} kg werden benötigt.`); return; }
-  state.stock -= state.order.kg; state.money += state.order.reward; state.completed += 1;
+  const finishedOrder = state.order;
+  state.stock -= finishedOrder.kg; state.money += finishedOrder.reward; state.completed += 1;
   if (state.mode === 'tutorial' && state.storyStep < 3) state.storyStep += 1;
+  state.order = makeOrder();
   $('#machine-status').textContent = 'Fertigung läuft'; $('#machine-status').classList.add('busy'); $('#program-output').textContent = 'Programm akzeptiert. Werkzeug fährt die Kontur ab ...';
   renderGame(); saveGame();
-  setTimeout(() => { $('#machine-status').textContent = 'Bereit'; $('#machine-status').classList.remove('busy'); $('#program-output').textContent = `Fertig: ${state.order.name} wurde erfolgreich gefertigt.`; showToast(`Auftrag abgeschlossen: +${formatEuro(state.order.reward)}`); }, 900);
+  setTimeout(() => { $('#machine-status').textContent = 'Bereit'; $('#machine-status').classList.remove('busy'); $('#program-output').textContent = `Fertig: ${finishedOrder.name} wurde erfolgreich gefertigt.`; showToast(`Auftrag abgeschlossen: +${formatEuro(finishedOrder.reward)}`); }, 900);
 }
 $('#start-screen').addEventListener('click', (event) => { const mode = event.target.dataset.mode; if (mode) startGame(mode); });
 $('#load-button').addEventListener('click', () => loadGame());
