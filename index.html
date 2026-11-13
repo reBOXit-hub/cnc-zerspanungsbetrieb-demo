@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CNC-Werkstatt</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app">
+    <section id="start-screen" class="screen">
+      <div class="title-mark"><span> CNC </span><span>WERKSTATT</span></div>
+      <p class="subtitle">Baue deinen eigenen Zerspanungsbetrieb auf.</p>
+      <div class="menu-card">
+        <button data-mode="tutorial" class="primary">Tutorial / Story starten</button>
+        <button data-mode="free">Freien Modus starten</button>
+        <button id="load-button">Letzten Spielstand laden</button>
+      </div>
+      <p class="hint">Der Spielstand wird automatisch alle 5 Sekunden im Browser gespeichert.</p>
+    </section>
+
+    <section id="game-screen" class="screen hidden">
+      <header class="topbar">
+        <div><strong id="mode-label">Freier Modus</strong><span id="story-step"></span></div>
+        <div class="stats"><span>Geld: <b id="money">0 €</b></span><span>Material: <b id="stock">0 kg</b></span><button id="save-button">Speichern</button><button id="menu-button">Menü</button></div>
+      </header>
+      <div class="layout">
+        <section class="machine-panel panel">
+          <div class="panel-heading"><h2 id="machine-title">Alte CNC-Drehmaschine</h2><span id="machine-status" class="badge">Bereit</span></div>
+          <canvas id="machine-canvas" width="720" height="420" aria-label="CNC-Maschine"></canvas>
+          <div id="program-output" class="program-output">Noch kein Programm ausgeführt.</div>
+        </section>
+        <aside class="side-panel">
+          <section class="panel" id="order-panel">
+            <div class="panel-heading"><h2>Auftrag</h2><button id="new-order">Neuer Auftrag</button></div>
+            <div id="order-content"></div>
+            <div class="field"><label for="program-input">CNC-Programm</label><textarea id="program-input" spellcheck="false" placeholder="G00 X0 Z2\nG01 Z-20 F0.2\nG00 X50"></textarea></div>
+            <button id="run-program" class="primary wide">Programm prüfen und Auftrag fertigen</button>
+          </section>
+          <section class="panel shop-panel">
+            <div class="panel-heading"><h2>Materiallager</h2><button id="buy-material">Material kaufen</button></div>
+            <p id="material-price"></p>
+            <p class="small">Kaufe mindestens 5 kg. Der Preis schwankt bei jedem Einkauf.</p>
+          </section>
+          <section class="panel" id="story-panel"></section>
+        </aside>
+      </div>
+      <div id="toast" role="status"></div>
+    </section>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
