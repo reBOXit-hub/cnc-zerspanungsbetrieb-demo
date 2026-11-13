@@ -1,116 +1,38 @@
-const $ = (selector) => document.querySelector(selector);
-const SAVE_KEY = 'cnc-werkstatt-save-v2';
-
+const $ = (s) => document.querySelector(s);
+const SAVE_KEY = 'cnc-werkstatt-save-v3';
 const materials = [
-  ['S235JR', 'Baustahl', 8, 1], ['S355J2', 'Baustahl', 10, 1.1], ['C45', 'Vergütungsstahl', 13, 1.25],
-  ['16MnCr5', 'Einsatzstahl', 16, 1.35], ['42CrMo4', 'Vergütungsstahl', 19, 1.5], ['100Cr6', 'Wälzlagerstahl', 22, 1.7],
-  ['1.4301', 'Edelstahl', 24, 1.8], ['1.4404', 'Edelstahl', 28, 2], ['1.2312', 'Werkzeugstahl', 32, 2.2],
-  ['1.2379', 'Kaltarbeitsstahl', 38, 2.5], ['EN AW-2017A', 'Aluminium', 12, .7], ['EN AW-2024', 'Aluminium', 14, .75],
-  ['EN AW-5083', 'Aluminium', 11, .65], ['EN AW-6060', 'Aluminium', 9, .55], ['EN AW-7075', 'Aluminium', 18, .9],
-  ['CuZn39Pb3', 'Messing', 17, .7], ['Ti Grade 5', 'Titan', 52, 2.8], ['POM-C', 'Kunststoff', 10, .35],
-  ['PA6', 'Kunststoff', 9, .45], ['GFK', 'Verbundwerkstoff', 21, 1.8]
+  ['S235JR','Baustahl',7.85,8,1],['S355J2','Baustahl',7.85,10,1.1],['C45','Vergütungsstahl',7.85,13,1.25],['16MnCr5','Einsatzstahl',7.85,16,1.35],['42CrMo4','Vergütungsstahl',7.85,19,1.5],['100Cr6','Wälzlagerstahl',7.85,22,1.7],['1.4301','Edelstahl',7.9,24,1.8],['1.4404','Edelstahl',8,28,2],['1.2312','Werkzeugstahl',7.85,32,2.2],['1.2379','Kaltarbeitsstahl',7.7,38,2.5],['EN AW-2017A','Aluminium',2.8,12,.7],['EN AW-2024','Aluminium',2.78,14,.75],['EN AW-5083','Aluminium',2.66,11,.65],['EN AW-6060','Aluminium',2.7,9,.55],['EN AW-7075','Aluminium',2.81,18,.9],['CuZn39Pb3','Messing',8.4,17,.7],['Ti Grade 5','Titan',4.43,52,2.8],['POM-C','Kunststoff',1.41,10,.35],['PA6','Kunststoff',1.14,9,.45],['GFK','Verbundwerkstoff',1.9,21,1.8]
 ];
-const tools = [
-  ['HSS-Bohrer 6 mm', 'Bohrer', 65, 100], ['HSS-Drehmeißel', 'Drehmeißel', 80, 100], ['Wendeplatte CNMG', 'Wendeplatte', 120, 100],
-  ['Wendeplatte VBMT', 'Wendeplatte', 135, 100]
-];
-const defaultState = () => ({
-  mode: 'free', money: 1200, storyStep: 0, completed: 0, order: null, price: 18,
-  materials: { 'S235JR': 10 }, tools: { 'HSS-Bohrer 6 mm': 1, 'HSS-Drehmeißel': 1, 'Wendeplatte CNMG': 2 },
-  durability: { 'HSS-Bohrer 6 mm': 100, 'HSS-Drehmeißel': 100, 'Wendeplatte CNMG': 100 }, program: []
-});
-let state = defaultState();
-let toastTimer;
-
-function euro(value) { return `${Math.round(value).toLocaleString('de-DE')} €`; }
-function materialData(name) { return materials.find((item) => item[0] === name) || materials[0]; }
-function toolData(name) { return tools.find((item) => item[0] === name) || tools[0]; }
-function showToast(message) { const toast = $('#toast'); toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 2600); }
-function saveGame(notify = false) { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); if (notify) showToast('Spielstand gespeichert.'); }
-function loadGame() {
-  const raw = localStorage.getItem(SAVE_KEY);
-  if (!raw) return showToast('Noch kein Spielstand vorhanden.');
-  try { state = { ...defaultState(), ...JSON.parse(raw) }; renderGame(); showToast('Spielstand geladen.'); } catch (error) { console.error(error); showToast('Spielstand konnte nicht geladen werden.'); }
-}
-function setScreen(screen) { $('#start-screen').classList.toggle('hidden', screen !== 'start'); $('#game-screen').classList.toggle('hidden', screen !== 'game'); }
-function randomPrice() { return Math.round(14 + Math.random() * 12); }
-function makeOrder() {
-  const tutorial = state.mode === 'tutorial', step = state.storyStep;
-  const names = tutorial ? ['Distanzring für die Spindel', 'Wellenzapfen für den Reitstock', 'Aufnahmeflansch', 'Erste Kundenwelle'] : ['Adapterbuchse', 'Montagebolzen', 'Führungsrolle', 'Flanschring'];
-  const difficulty = tutorial ? Math.min(step + 1, 4) : 1 + (state.completed % 4);
-  return { name: names[tutorial ? Math.min(step, 3) : Math.floor(Math.random() * names.length)], kg: 5 + difficulty * 2, reward: 180 + difficulty * 90, difficulty, material: tutorial ? 'S235JR' : materials[Math.floor(Math.random() * materials.length)][0], machine: difficulty >= 3 ? 'Fräsmaschine' : 'Drehmaschine' };
-}
-function storyText() {
-  return ['Ida zeigt dir zuerst die alte Drehmaschine. Wähle Material, Werkzeug und einen einfachen Bearbeitungsschritt.', 'Die ersten Teile sitzen. Jetzt lernst du, wie Vorschub und Werkzeugverschleiß zusammenhängen.', 'Nach dem Zeitsprung steht eine Fräsmaschine in der Werkstatt. Neue Werkzeuge eröffnen neue Aufträge.', 'Deine erste Kundenanfrage ist da. Danach kannst du im freien Modus deinen eigenen Betrieb aufbauen.'][Math.min(state.storyStep, 3)];
-}
-function renderProgramBuilder() {
-  const builder = $('#program-builder');
-  if (!state.program.length) state.program = [{ action: 'Planen', tool: 'HSS-Drehmeißel', feed: '0.2' }];
-  builder.innerHTML = state.program.map((step, index) => `<div class="program-row"><select data-index="${index}" data-key="action"><option ${step.action === 'Planen' ? 'selected' : ''}>Planen</option><option ${step.action === 'Längsdrehen' ? 'selected' : ''}>Längsdrehen</option><option ${step.action === 'Bohren' ? 'selected' : ''}>Bohren</option><option ${step.action === 'Schlichten' ? 'selected' : ''}>Schlichten</option></select><select data-index="${index}" data-key="tool">${tools.map((tool) => `<option ${step.tool === tool[0] ? 'selected' : ''}>${tool[0]}</option>`).join('')}</select><select data-index="${index}" data-key="feed"><option value="0.1" ${step.feed === '0.1' ? 'selected' : ''}>Vorschub 0,1</option><option value="0.2" ${step.feed === '0.2' ? 'selected' : ''}>Vorschub 0,2</option><option value="0.4" ${step.feed === '0.4' ? 'selected' : ''}>Vorschub 0,4</option><option value="0.6" ${step.feed === '0.6' ? 'selected' : ''}>Vorschub 0,6</option></select><button class="remove-step" data-remove="${index}" aria-label="Schritt entfernen">×</button></div>`).join('') + '<button id="add-step">+ Arbeitsschritt hinzufügen</button>';
-  builder.querySelectorAll('select').forEach((input) => input.addEventListener('change', (event) => { state.program[Number(event.target.dataset.index)][event.target.dataset.key] = event.target.value; }));
-  builder.querySelectorAll('[data-remove]').forEach((button) => button.addEventListener('click', () => { state.program.splice(Number(button.dataset.remove), 1); renderProgramBuilder(); }));
-  $('#add-step').addEventListener('click', () => { state.program.push({ action: 'Schlichten', tool: 'HSS-Drehmeißel', feed: '0.1' }); renderProgramBuilder(); });
-}
-function renderInventory() {
-  $('#material-inventory').innerHTML = Object.entries(state.materials).map(([name, amount]) => `<div class="inventory-item"><strong>${name}</strong><span>${materialData(name)[1]} · ${amount.toFixed(1)} kg</span></div>`).join('');
-  $('#tool-inventory').innerHTML = Object.entries(state.tools).map(([name, amount]) => `<div class="inventory-item"><strong>${name}</strong><span>${amount} Stück · Haltbarkeit ${Math.round(state.durability[name] || 100)}%</span></div>`).join('');
-}
-function renderGame() {
-  $('#mode-label').textContent = state.mode === 'tutorial' ? 'Tutorial / Story' : 'Freier Modus';
-  $('#story-step').textContent = state.mode === 'tutorial' ? `· Kapitel ${Math.min(state.storyStep + 1, 4)} / 4` : '';
-  $('#money').textContent = euro(state.money); $('#completed').textContent = state.completed;
-  $('#machine-title').textContent = state.order?.machine === 'Fräsmaschine' ? 'CNC-Fräsmaschine' : 'Alte CNC-Drehmaschine';
-  $('#machine-status').textContent = 'Bereit'; $('#machine-status').classList.remove('busy');
-  $('#material-price').textContent = `Stahlmarkt: ${state.price} € / kg · Mindestabnahme 5 kg`;
-  $('#order-content').innerHTML = state.order ? `<div class="order-line"><span>Bauteil</span><strong>${state.order.name}</strong></div><div class="order-line"><span>Werkstoff</span><strong>${state.order.material} · ${state.order.kg} kg</strong></div><div class="order-line"><span>Vergütung</span><strong>${euro(state.order.reward)}</strong></div>` : '<p>Kein Auftrag aktiv.</p>';
-  $('#coach-text').textContent = state.mode === 'tutorial' ? storyText() : 'Stelle deinen Ablauf zusammen. Hoher Vorschub spart Zeit, verschleißt aber das Werkzeug schneller.';
-  $('#story-panel').innerHTML = `<h2>${state.mode === 'tutorial' ? 'Deine Geschichte' : 'Betriebshinweis'}</h2><p>${state.mode === 'tutorial' ? storyText() : 'Kaufe Werkstoffe auf Vorrat, beobachte den Markt und halte passende Werkzeuge bereit.'}</p>`;
-  renderProgramBuilder(); renderInventory(); drawMachine();
-}
-function drawMachine() {
-  const canvas = $('#machine-canvas'), ctx = canvas.getContext('2d'), w = canvas.width, h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = '#9bd3d2'; ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = '#f5d894'; ctx.fillRect(0, 350, w, 190);
-  ctx.fillStyle = '#7eb3b7'; ctx.fillRect(0, 300, w, 50);
-  for (let x = 0; x < w; x += 64) { ctx.fillStyle = x % 128 ? '#76a9ad' : '#86bdbe'; ctx.fillRect(x, 300, 64, 50); }
-  ctx.fillStyle = '#6e4b54'; ctx.fillRect(80, 345, 650, 90); ctx.fillStyle = '#88606a'; ctx.fillRect(115, 115, 560, 230);
-  ctx.fillStyle = '#3e4659'; ctx.fillRect(145, 145, 420, 160); ctx.fillStyle = '#273343'; ctx.fillRect(175, 170, 360, 105);
-  ctx.strokeStyle = '#e9c76e'; ctx.lineWidth = 8; ctx.strokeRect(175, 170, 360, 105);
-  ctx.fillStyle = '#d7e1d4'; ctx.beginPath(); ctx.arc(275, 222, 54, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#455468'; ctx.beginPath(); ctx.arc(275, 222, 35, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#eabf70'; ctx.fillRect(320, 213, 230, 18); ctx.fillStyle = '#263445'; ctx.fillRect(550, 108, 175, 300); ctx.fillStyle = '#a6d9cd'; ctx.fillRect(575, 140, 125, 90); ctx.fillStyle = '#36515a'; ctx.font = '22px monospace'; ctx.fillText('READY', 595, 195);
-  ctx.fillStyle = '#70505a'; ctx.fillRect(750, 230, 130, 170); ctx.fillStyle = '#c87b56'; ctx.fillRect(785, 250, 58, 72); ctx.fillStyle = '#fff0bd'; ctx.font = '20px sans-serif'; ctx.fillText('Ida', 796, 350);
-  ctx.fillStyle = '#51404c'; ctx.fillRect(50, 395, 100, 25); ctx.fillRect(205, 395, 100, 25); ctx.fillRect(525, 395, 100, 25); ctx.font = '18px sans-serif'; ctx.fillText('Werkstatt', 82, 485); ctx.fillText(state.order?.machine || 'Maschine', 740, 450);
-}
-function buyMaterial() {
-  const name = state.order?.material || 'S235JR', quantity = 5, cost = quantity * state.price;
-  if (state.money < cost) return showToast('Nicht genug Geld für die Mindestmenge.');
-  state.money -= cost; state.materials[name] = (state.materials[name] || 0) + quantity; state.price = randomPrice(); renderGame(); saveGame(); showToast(`${quantity} kg ${name} eingelagert.`);
-}
-function buyTool() {
-  const next = tools.find((tool) => !state.tools[tool[0]]), item = next || tools[Math.floor(Math.random() * tools.length)];
-  if (state.money < item[2]) return showToast('Nicht genug Geld für dieses Werkzeug.');
-  state.money -= item[2]; state.tools[item[0]] = (state.tools[item[0]] || 0) + 1; state.durability[item[0]] = 100; renderGame(); saveGame(); showToast(`${item[0]} gekauft.`);
-}
-function runProgram() {
-  if (!state.order || !state.program.length) return showToast('Erstelle zuerst einen Programmablauf.');
-  const material = materialData(state.order.material), amount = state.materials[state.order.material] || 0;
-  if (amount < state.order.kg) return showToast(`Nicht genug ${state.order.material} im Lager.`);
-  for (const step of state.program) {
-    if (!state.tools[step.tool]) return showToast(`Dir fehlt das Werkzeug: ${step.tool}.`);
-    const feed = Number(step.feed), maxFeed = Math.max(.1, 1 / material[3]);
-    if (feed > maxFeed) return showToast(`${step.feed} ist für ${state.order.material} zu hoher Vorschub.`);
-  }
-  const used = state.program.reduce((sum, step) => sum + Number(step.feed) * material[3] * 8, 0);
-  state.materials[state.order.material] -= state.order.kg; state.money += state.order.reward; state.completed += 1;
-  state.program.forEach((step) => { state.durability[step.tool] = Math.max(0, (state.durability[step.tool] || 100) - used); });
-  const finished = state.order; if (state.mode === 'tutorial' && state.storyStep < 3) state.storyStep += 1; state.order = makeOrder();
-  $('#machine-status').textContent = 'Fertigung läuft'; $('#machine-status').classList.add('busy'); saveGame();
-  renderGame(); setTimeout(() => { $('#machine-status').textContent = 'Bereit'; $('#machine-status').classList.remove('busy'); showToast(`Auftrag abgeschlossen: +${euro(finished.reward)}`); }, 900);
-}
-$('#start-screen').addEventListener('click', (event) => { if (event.target.dataset.mode) { state = defaultState(); state.mode = event.target.dataset.mode; state.order = makeOrder(); setScreen('game'); renderGame(); } });
-$('#load-button').addEventListener('click', loadGame); $('#save-button').addEventListener('click', () => saveGame(true)); $('#menu-button').addEventListener('click', () => { saveGame(); setScreen('start'); });
-$('#buy-material').addEventListener('click', buyMaterial); $('#buy-tool').addEventListener('click', buyTool); $('#run-program').addEventListener('click', runProgram);
-$('#new-order').addEventListener('click', () => { state.order = makeOrder(); renderGame(); saveGame(); showToast('Neue Anfrage eingegangen.'); });
-setInterval(() => { if (!$('#game-screen').classList.contains('hidden')) saveGame(); }, 5000);
-renderGame();
+const tools=[['HSS-Bohrer 6 mm','Bohrer',65],['HSS-Drehmeißel','Drehmeißel',80],['Wendeplatte CNMG','Wendeplatte',120],['Wendeplatte VBMT','Wendeplatte',135]];
+const machines=[['lathe','Alte CNC-Drehmaschine','Drehmaschine','Drehen, Bohren und Gewinde'],['mill','CNC-Fräsmaschine','Fräsmaschine','Fräsen, Bohren und Konturen'],['turnmill','CNC-Dreh-/Fräszentrum','Dreh-/Fräszentrum','Komplettbearbeitung']];
+const shapes=['Rundmaterial','6-Kant','4-Kant','Gewindestange','Flachmaterial','Rechteckmaterial'];
+const defaultState=()=>({mode:'free',money:1200,completed:0,storyStep:0,price:8,order:null,selectedMachine:null,materials:{'S235JR':{length:1200,shape:'Rundmaterial',width:30,height:30}},tools:{'HSS-Bohrer 6 mm':1,'HSS-Drehmeißel':1,'Wendeplatte CNMG':2},durability:{'HSS-Bohrer 6 mm':100,'HSS-Drehmeißel':100,'Wendeplatte CNMG':100},machineHealth:{lathe:{maintenance:88,kss:72},mill:{maintenance:100,kss:100},turnmill:{maintenance:100,kss:100}},setup:{material:'S235JR',length:1200,diameter:30,width:30,height:30,shape:'Rundmaterial'},head:{stock:2,diameter:30,zero:'Stirnfläche G54',coolant:true},cycles:[{type:'Planen',tool:'HSS-Drehmeißel',speed:1200,feed:.2,offset:'G54',radius:0}]});
+let state=defaultState(),toastTimer;
+const euro=(n)=>`${Math.round(n).toLocaleString('de-DE')} €`;
+const mat=(name)=>materials.find((m)=>m[0]===name)||materials[0];
+const machine=()=>machines.find((m)=>m[0]===state.selectedMachine)||machines[0];
+const mass=(s)=>{const m=mat(s.material), l=Number(s.length)/1000, d=Number(s.diameter), w=Number(s.width), h=Number(s.height);let area=Math.PI*(d/2)**2;if(s.shape==='4-Kant'||s.shape==='Rechteckmaterial'||s.shape==='Flachmaterial')area=w*h;if(s.shape==='6-Kant')area=2.598*(w/2)**2;return area*l*m[2]/1000};
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),2500)}
+function save(notify=false){localStorage.setItem(SAVE_KEY,JSON.stringify(state));if(notify)toast('Spielstand gespeichert.')}
+function load(){const raw=localStorage.getItem(SAVE_KEY);if(!raw)return toast('Noch kein Spielstand vorhanden.');try{state={...defaultState(),...JSON.parse(raw)};setScreen('game');render()}catch(e){console.error(e);toast('Spielstand konnte nicht geladen werden.')}}
+function setScreen(screen){$('#start-screen').classList.toggle('hidden',screen!=='start');$('#game-screen').classList.toggle('hidden',screen!=='game')}
+function randomPrice(){return Math.round(7+Math.random()*5)}
+function order(){const tutorial=state.mode==='tutorial',d=tutorial?Math.min(state.storyStep+1,4):1+(state.completed%4),names=tutorial?['Distanzring','Wellenzapfen','Aufnahmeflansch','Erste Kundenwelle']:['Adapterbuchse','Montagebolzen','Führungsrolle','Flanschring'];return{name:names[tutorial?Math.min(state.storyStep,3):Math.floor(Math.random()*4)],qty:1+(state.completed%3),kg:5+d*2,reward:180+d*90,material:tutorial?'S235JR':materials[Math.floor(Math.random()*materials.length)][0],machine:d>=3?'mill':'lathe'}}
+function ring(label,value){const c=value<30?' danger':value<60?' warn':'';return`<div class="health-item"><span>${label} ${Math.round(value)}%</span><div class="ring${c}"><i style="width:${Math.max(0,value)}%"></i></div></div>`}
+function story(){return['Ida zeigt dir zuerst die alte Drehmaschine. Wähle eine Maschine und richte das Rohmaterial ein.','Die ersten Teile sitzen. Jetzt lernst du Programmkopf, Nullpunkt und Zyklen.','Nach dem Zeitsprung steht eine Fräsmaschine in der Werkstatt.','Deine erste Kundenanfrage ist da. Danach steht dir der freie Modus offen.'][Math.min(state.storyStep,3)]}
+function renderMachines(){const list=$('#machine-list');list.innerHTML=machines.map((m)=>`<button class="machine-card" data-machine="${m[0]}"><canvas width="180" height="130" data-machine-canvas="${m[0]}"></canvas><span><strong>${m[1]}</strong><small>${m[3]}</small>${machineHealth(m[0])}</span></button>`).join('');list.querySelectorAll('[data-machine]').forEach((b)=>b.onclick=()=>openMachine(b.dataset.machine));machines.forEach((m)=>drawMachineCard($(`[data-machine-canvas="${m[0]}"]`),m[0]))}
+function machineHealth(id){const h=state.machineHealth[id]||{maintenance:100,kss:100};return`<small>${h.maintenance<30?'Wartung nötig':'Betriebsbereit'} · KSS ${h.kss}%</small>`}
+function renderInventory(){const mi=Object.entries(state.materials).map(([name,s])=>`<div class="inventory-item"><strong>${name} · ${s.shape}</strong><span>${s.length} mm · ${mass({...s,material:name}).toFixed(2)} kg</span></div>`).join('');$('#material-inventory').innerHTML=mi;$('#tool-inventory').innerHTML=Object.entries(state.tools).map(([name,n])=>`<div class="inventory-item"><strong>${name}</strong><span>${n} Stück · ${Math.round(state.durability[name]||100)}%</span></div>`).join('')}
+function renderWorkshop(){const h=state.machineHealth;$('#material-price').textContent=`Rohmaterialpreis ${state.price} €/kg · Preise nach Masse, Einkauf nach Länge`;$('#story-panel').innerHTML=`<h2>${state.mode==='tutorial'?'Deine Geschichte':'Betriebshinweis'}</h2><p>${state.mode==='tutorial'?story():'Kaufe Stangen, Profile und Sonderformen auf Länge. Bezahlt wird nach berechneter Masse.'}</p>`;renderMachines();renderInventory()}
+function renderOrder(){const o=state.order;$('#order-content').innerHTML=o?`<div class="order-line"><span>Bauteil</span><strong>${o.name}</strong></div><div class="order-line"><span>Stückzahl</span><strong>${o.qty} Stück</strong></div><div class="order-line"><span>Werkstoff</span><strong>${o.material} · ${o.kg} kg/Stück</strong></div><div class="order-line"><span>Maschine</span><strong>${o.machine==='mill'?'Fräse':'Drehmaschine'}</strong></div><div class="order-line"><span>Vergütung</span><strong>${euro(o.reward*o.qty)}</strong></div>`:'<p>Keine Anfrage aktiv.</p>'}
+function renderSetup(){const s=state.setup;$('#material-setup').innerHTML=`<div class="setup-form"><div class="field"><label>Werkstoff</label><select id="setup-material">${materials.map(m=>`<option ${s.material===m[0]?'selected':''}>${m[0]}</option>`).join('')}</select></div><div class="field"><label>Geometrie</label><select id="setup-shape">${shapes.map(x=>`<option ${s.shape===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Länge (mm)</label><input id="setup-length" type="number" min="50" step="10" value="${s.length}"></div><div class="field"><label>Ø / Breite (mm)</label><input id="setup-diameter" type="number" min="1" step="1" value="${s.diameter}"></div><div class="field"><label>Höhe (mm)</label><input id="setup-height" type="number" min="1" step="1" value="${s.height}"></div><div class="field"><label>Berechnete Masse</label><strong>${mass(s).toFixed(2)} kg</strong></div></div><p class="market-line">Einkauf: ${s.length} mm · Zahlung: ${(mass(s)*state.price).toFixed(2)} € · Mindestlänge 50 mm</p>`;['material','shape','length','diameter','height'].forEach((key)=>{const e=$(`#setup-${key}`);e.oninput=()=>{state.setup[key]=key==='length'||key==='diameter'||key==='height'?Number(e.value):e.value;renderSetup();save()}})}
+function renderHead(){const h=state.head;$('#program-head').innerHTML=`<div class="setup-form"><div class="field"><label>Ausspanweite (mm)</label><input id="head-stock" type="number" min="0" step=".1" value="${h.stock}"></div><div class="field"><label>Roh-Ø (mm)</label><input id="head-diameter" type="number" min="1" step=".1" value="${h.diameter}"></div><div class="field"><label>Nullpunkt</label><input id="head-zero" value="${h.zero}"></div><label class="field full"><span>KSS eingeschaltet</span><input id="head-coolant" type="checkbox" ${h.coolant?'checked':''}></label></div>`;[['stock','head-stock'],['diameter','head-diameter'],['zero','head-zero']].forEach(([k,id])=>{$('#'+id).oninput=(e)=>{state.head[k]=id==='head-stock'||id==='head-diameter'?Number(e.target.value):e.target.value;save()}});$('#head-coolant').onchange=(e)=>{state.head.coolant=e.target.checked;save()}}
+function renderCycles(){const types=['Bohren mittig','Bohren außermittig','Konturdrehen','Planen','Längsdrehen','Gewindedrehen','Abstechen','Einstechen','Freistich'];$('#cycle-list').innerHTML=state.cycles.map((c,i)=>`<div class="cycle-card"><div class="cycle-top"><strong>${i+1}. Zyklus</strong><button data-remove-cycle="${i}">×</button></div><div class="cycle-settings"><label>Zyklus<select data-cycle="${i}" data-key="type">${types.map(t=>`<option ${c.type===t?'selected':''}>${t}</option>`).join('')}</select></label><label>Werkzeug<select data-cycle="${i}" data-key="tool">${tools.map(t=>`<option ${c.tool===t[0]?'selected':''}>${t[0]}</option>`).join('')}</select></label><label>Drehzahl <span class="slider-row"><input type="range" min="100" max="3500" step="50" value="${c.speed}" data-cycle="${i}" data-key="speed"><input class="number-input" type="number" min="100" max="3500" value="${c.speed}" data-cycle="${i}" data-key="speed"></span></label><label>Vorschub <span class="slider-row"><input type="range" min=".05" max=".8" step=".05" value="${c.feed}" data-cycle="${i}" data-key="feed"><input class="number-input" type="number" min=".05" max=".8" step=".05" value="${c.feed}" data-cycle="${i}" data-key="feed"></span></label><label>Nullpunkt<input value="${c.offset}" data-cycle="${i}" data-key="offset"></label><label>Fase / Radius<input type="number" value="${c.radius}" data-cycle="${i}" data-key="radius"></label></div></div>`).join('');$('#cycle-list').querySelectorAll('[data-cycle]').forEach((e)=>e.oninput=()=>{const i=Number(e.dataset.cycle);state.cycles[i][e.dataset.key]=e.type==='number'||e.type==='range'?Number(e.value):e.value;renderCycles();save()});$('#cycle-list').querySelectorAll('[data-remove-cycle]').forEach((e)=>e.onclick=()=>{state.cycles.splice(Number(e.dataset.removeCycle),1);renderCycles()})}
+function render(){const m=machine();$('#mode-label').textContent=state.mode==='tutorial'?'Tutorial / Story':'Freier Modus';$('#story-step').textContent=state.mode==='tutorial'?`· Kapitel ${Math.min(state.storyStep+1,4)} / 4`:'';$('#money').textContent=euro(state.money);$('#completed').textContent=state.completed;renderWorkshop();if(!$('#machine-view').classList.contains('hidden')){renderOrder();renderSetup();renderHead();renderCycles();$('#machine-heading').textContent=m[1];$('#machine-subheading').textContent=m[3];$('#machine-title').textContent=m[1];const h=state.machineHealth[m[0]];$('#machine-health').innerHTML=ring('Wartung',h.maintenance)+ring('KSS',h.kss);drawMachine($('#machine-canvas'),m[0]);$('#coach-text').textContent=state.mode==='tutorial'?story():'Beginne mit Material, Programmkopf und Zyklen. Slider und Tastaturfelder sind beide nutzbar.'}}
+function drawMachineCard(canvas,id){drawMachine(canvas,id,true)}
+function drawMachine(canvas,id,small=false){const c=canvas.getContext('2d'),w=canvas.width,h=canvas.height;c.clearRect(0,0,w,h);c.fillStyle='#849ea1';c.fillRect(0,0,w,h);c.fillStyle='#d5b16b';c.fillRect(0,h*.72,w,h*.28);c.fillStyle='#475262';c.fillRect(w*.08,h*.34,w*.65,h*.38);c.fillStyle='#293645';c.fillRect(w*.14,h*.4,w*.48,h*.2);c.fillStyle='#bfccd0';c.fillRect(w*.25,h*.43,w*.2,h*.12);c.fillStyle='#d8a85f';c.fillRect(w*.43,h*.48,w*.22,h*.04);c.fillStyle='#2e3948';c.fillRect(w*.77,h*.2,w*.15,h*.55);c.fillStyle='#9dd7cf';c.fillRect(w*.795,h*.29,w*.1,h*.14);c.fillStyle='#e7c77d';c.fillRect(w*.16,h*.68,w*.5,h*.05);c.strokeStyle='#1f2b38';c.lineWidth=small?3:6;c.strokeRect(w*.08,h*.34,w*.65,h*.38);c.fillStyle='#334052';c.font=`${small?12:22}px sans-serif`;c.fillText(id==='mill'?'FRÄSE':id==='turnmill'?'TURN/MILL':'CNC DREHEN',w*.1,h*.94)}
+function openMachine(id){state.selectedMachine=id;if(!state.order)state.order=order();$('#workshop-view').classList.add('hidden');$('#machine-view').classList.remove('hidden');render()}
+function buyMaterial(){const s=state.setup,m=mat(s.material),length=Math.max(50,Number(s.length)),kg=mass({...s,length}),cost=kg*state.price;if(state.money<cost)return toast(`Nicht genug Geld: ${cost.toFixed(2)} € benötigt.`);const old=state.materials[s.material]||{length:0,shape:s.shape,width:s.width,height:s.height};state.money-=cost;state.materials[s.material]={...old,length:old.length+length,shape:s.shape,width:s.width,height:s.height};state.price=randomPrice();render();save();toast(`${length} mm ${s.shape} eingelagert.`)}
+function buyTool(){const item=tools.find(t=>!state.tools[t[0]])||tools[Math.floor(Math.random()*tools.length)];if(state.money<item[2])return toast('Nicht genug Geld für dieses Werkzeug.');state.money-=item[2];state.tools[item[0]]=(state.tools[item[0]]||0)+1;state.durability[item[0]]=100;render();save();toast(`${item[0]} gekauft.`)}
+function run(){const o=state.order,s=state.setup,m=mat(s.material);if(!o)return toast('Keine Anfrage aktiv.');if(s.material!==o.material)return toast(`Für diesen Auftrag wird ${o.material} benötigt.`);if(mass(s)<o.kg*o.qty)return toast('Das aufgespannte Rohmaterial ist zu leicht.');if(!state.cycles.length)return toast('Füge mindestens einen Zyklus ein.');for(const c of state.cycles){if(!state.tools[c.tool])return toast(`Werkzeug fehlt: ${c.tool}.`);if(c.speed>2600&&m[4]>1.5)return toast('Drehzahl für diesen Werkstoff zu hoch.');if(c.feed>Math.max(.1,1/m[4]))return toast('Vorschub für diesen Werkstoff zu hoch.')}const wear=state.cycles.reduce((n,c)=>n+c.feed*m[4]*6,0);state.cycles.forEach(c=>state.durability[c.tool]=Math.max(0,(state.durability[c.tool]||100)-wear));const h=state.machineHealth[state.selectedMachine];h.maintenance=Math.max(0,h.maintenance-3);h.kss=Math.max(0,h.kss-(state.head.coolant?1:4));state.money+=o.reward*o.qty;state.completed++;if(state.mode==='tutorial'&&state.storyStep<3)state.storyStep++;state.order=order();render();save();toast(`Auftrag abgeschlossen: ${o.qty} × ${o.name} · +${euro(o.reward*o.qty)}`)}
+$('#start-screen').onclick=(e)=>{if(e.target.dataset.mode){state=defaultState();state.mode=e.target.dataset.mode;state.order=order();setScreen('game');render()}};$('#load-button').onclick=load;$('#save-button').onclick=()=>save(true);$('#menu-button').onclick=()=>{save();setScreen('start')};$('#buy-material').onclick=buyMaterial;$('#buy-tool').onclick=buyTool;$('#back-workshop').onclick=()=>{$('#machine-view').classList.add('hidden');$('#workshop-view').classList.remove('hidden');render()};$('#new-order').onclick=()=>{state.order=order();render();save();toast('Neue Anfrage eingegangen.')};$('#add-cycle').onclick=()=>{state.cycles.push({type:'Längsdrehen',tool:'HSS-Drehmeißel',speed:1000,feed:.15,offset:'G54',radius:0});renderCycles()};$('#run-program').onclick=run;setInterval(()=>{if(!$('#game-screen').classList.contains('hidden'))save()},5000);render();

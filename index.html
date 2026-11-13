@@ -8,7 +8,8 @@
 </head>
 <body>
   <main id="app">
-    <section id="start-screen" class="screen">
+    <section id="start-screen" class="screen start-screen">
+      <div class="start-art"><div class="sun"></div><div class="mountain mountain-back"></div><div class="mountain mountain-front"></div><div class="workshop-house"><span></span><i></i><b></b></div></div>
       <div class="title-mark"><span>CNC</span><span>WERKSTATT</span></div>
       <p class="subtitle">Deine kleine Werkstatt. Deine ersten Späne. Dein eigener Betrieb.</p>
       <div class="menu-card">
@@ -23,34 +24,32 @@
         <div><strong id="mode-label">Freier Modus</strong><span id="story-step"></span></div>
         <div class="stats"><span>Geld <b id="money">0 €</b></span><span>Aufträge <b id="completed">0</b></span><button id="save-button">Speichern</button><button id="menu-button">Menü</button></div>
       </header>
-      <div class="game-frame">
-        <section class="scene-card">
-          <canvas id="machine-canvas" width="960" height="540" aria-label="Pixelartige CNC-Werkstatt"></canvas>
-          <div class="scene-caption"><strong id="machine-title">Alte CNC-Drehmaschine</strong><span id="machine-status" class="badge">Bereit</span></div>
-        </section>
-        <aside class="control-column">
-          <section class="panel order-panel">
-            <div class="panel-heading"><h2>Auftragsmappe</h2><button id="new-order">Neuer Auftrag</button></div>
-            <div id="order-content"></div>
-            <div class="dialogue-box"><div class="portrait">👩‍🏭</div><div><strong id="coach-name">Werkstattmeisterin Ida</strong><p id="coach-text">Wähle die passenden Arbeitsschritte aus. Im Tutorial erkläre ich dir jeden Schritt.</p></div></div>
-            <div class="field"><label>Programmablauf</label><div id="program-builder" class="program-builder"></div></div>
-            <button id="run-program" class="primary wide">Programm prüfen und Auftrag fertigen</button>
-          </section>
-        </aside>
-      </div>
-      <div class="lower-grid">
-        <section class="panel inventory-panel">
-          <div class="panel-heading"><h2>Materiallager</h2><button id="buy-material">Material einkaufen</button></div>
-          <p id="material-price" class="market-line"></p>
-          <div id="material-inventory" class="inventory-grid"></div>
-        </section>
-        <section class="panel inventory-panel">
-          <div class="panel-heading"><h2>Werkzeugschrank</h2><button id="buy-tool">Werkzeug kaufen</button></div>
-          <p class="market-line">Werkzeugverschleiß steigt bei hartem Material und hohem Vorschub.</p>
-          <div id="tool-inventory" class="inventory-grid"></div>
-        </section>
-        <section class="panel story-panel" id="story-panel"></section>
-      </div>
+
+      <section id="workshop-view" class="view">
+        <div class="view-heading"><div><h1>Werkstatt</h1><p>Wähle eine Maschine, um Material und Arbeitsplanung zu öffnen.</p></div><div id="workshop-message" class="dialogue-inline">Ida: Erst die Maschine auswählen, dann richten wir den Auftrag ein.</div></div>
+        <canvas id="workshop-canvas" width="1280" height="520" aria-label="Werkstattübersicht"></canvas>
+        <div id="machine-list" class="machine-list"></div>
+        <div class="lower-grid">
+          <section class="panel inventory-panel"><div class="panel-heading"><h2>Materiallager</h2><button id="buy-material">Rohmaterial kaufen</button></div><p id="material-price" class="market-line"></p><div id="material-inventory" class="inventory-grid"></div></section>
+          <section class="panel inventory-panel"><div class="panel-heading"><h2>Werkzeugschrank</h2><button id="buy-tool">Werkzeug kaufen</button></div><p class="market-line">Haltbarkeit sinkt mit Schnittlast und Werkstoff.</p><div id="tool-inventory" class="inventory-grid"></div></section>
+          <section class="panel story-panel" id="story-panel"></section>
+        </div>
+      </section>
+
+      <section id="machine-view" class="view hidden">
+        <div class="view-heading"><div><button id="back-workshop" class="back-button">← Werkstatt</button><h1 id="machine-heading">CNC-Drehmaschine</h1><p id="machine-subheading"></p></div><div id="machine-health" class="health-strip"></div></div>
+        <div class="machine-layout">
+          <section class="scene-card"><canvas id="machine-canvas" width="960" height="540" aria-label="CNC-Maschine"></canvas><div class="scene-caption"><strong id="machine-title">CNC-Drehmaschine</strong><span id="machine-status" class="badge">Bereit</span></div></section>
+          <aside class="control-column">
+            <section class="panel order-panel"><div class="panel-heading"><h2>Auftragsmappe</h2><button id="new-order">Neue Anfrage</button></div><div id="order-content"></div><div class="dialogue-box"><div class="portrait">👩‍🏭</div><div><strong>Werkstattmeisterin Ida</strong><p id="coach-text"></p></div></div></section>
+          </aside>
+        </div>
+        <div class="planning-grid">
+          <section class="panel setup-panel"><h2>1 · Material aufspannen</h2><div id="material-setup"></div></section>
+          <section class="panel setup-panel"><h2>2 · Programmkopf</h2><div id="program-head"></div></section>
+          <section class="panel cycles-panel"><div class="panel-heading"><h2>3 · Bearbeitungszyklen</h2><button id="add-cycle">+ Zyklus</button></div><div id="cycle-list"></div><button id="run-program" class="primary wide">Programm prüfen und Auftrag fertigen</button></section>
+        </div>
+      </section>
       <div id="toast" role="status"></div>
     </section>
   </main>
